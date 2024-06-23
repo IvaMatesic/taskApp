@@ -1,10 +1,13 @@
+version: '3'
 services:
   mariadb:
-    image: 'mariadb:latest'
+    image: mariadb:10.3
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
     environment:
-      - 'MARIADB_DATABASE=mydatabase'
-      - 'MARIADB_PASSWORD=secret'
-      - 'MARIADB_ROOT_PASSWORD=verysecret'
-      - 'MARIADB_USER=myuser'
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: task_app
     ports:
-      - '3306'
+      - 3306:3306
+    security_opt:
+      - seccomp:unconfined
