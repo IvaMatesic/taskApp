@@ -12,6 +12,7 @@ import java.time.LocalDate;
 @Builder
 @NoArgsConstructor
 public class TaskDto {
+    private Long id;
     private String title;
     private String summary;
     private LocalDate dueDate;

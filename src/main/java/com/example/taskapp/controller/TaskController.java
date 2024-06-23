@@ -22,4 +22,10 @@ public class TaskController {
         Task createdTask = taskService.createTask(modelMapper.map(taskDto, Task.class));
         return ResponseEntity.ok(modelMapper.map(createdTask, TaskDto.class));
     }
+
+    @PutMapping(value = "/{id}")
+    public ResponseEntity<TaskDto> updateTask(@PathVariable(name = "id") Long taskId ,@RequestBody TaskDto taskDto) {
+        Task createdTask = taskService.updateTask(taskId, modelMapper.map(taskDto, Task.class));
+        return ResponseEntity.ok(modelMapper.map(createdTask, TaskDto.class));
+    }
 }
