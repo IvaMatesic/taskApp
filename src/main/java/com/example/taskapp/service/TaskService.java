@@ -7,6 +7,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class TaskService {
@@ -28,9 +30,15 @@ public class TaskService {
         return taskRepository.save(persitedTask);
     }
 
+    @Transactional(readOnly = true)
+    public List<Task> findAll() {
+        return taskRepository.findAll();
+    }
+
     private Task findById(Long id) {
         return taskRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Task with id " + id + " not found"));
     }
+
 
 }

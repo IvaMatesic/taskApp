@@ -4,6 +4,7 @@ import com.example.taskapp.dto.TaskDto;
 import com.example.taskapp.model.Task;
 import com.example.taskapp.repository.TaskRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -13,10 +14,11 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
+import java.util.Arrays;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -31,6 +33,15 @@ public class TaskControllerTest {
 
     @Autowired
     private TaskRepository taskRepository;
+
+    @BeforeEach
+    public void setup() {
+        taskRepository.deleteAll();
+        taskRepository.saveAll(Arrays.asList(
+                Task.builder().title("Test Task 1").summary("Test Summary 1").dueDate(LocalDate.now().plusDays(1)).build(),
+                Task.builder().title("Test Task 2").summary("Test Summary 2").dueDate(LocalDate.now().plusDays(2)).build()
+        ));
+    }
 
 
     @Test
@@ -78,5 +89,28 @@ public class TaskControllerTest {
 
         assertThat(responseDto).usingRecursiveComparison()
                 .isEqualTo(dto);
+    }
+
+    @Test
+    public void findAllTasks_returnsAllTasks() throws Exception {
+    MockHttpServletResponse result =  mockMvc.perform(get("/tasks")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse();
+
+        String jsonResponse = result.getContentAsString();
+
+        List<TaskDto> responseDtos = Arrays.asList(objectMapper.readValue(jsonResponse, TaskDto[].class));
+
+        assertThat(responseDtos).hasSize(2);
+
+        TaskDto taskDto1 = responseDtos.get(0);
+        assertThat(taskDto1.getTitle()).isEqualTo("Test Task 1");
+        assertThat(taskDto1.getSummary()).isEqualTo("Test Summary 1");
+
+        TaskDto taskDto2 = responseDtos.get(1);
+        assertThat(taskDto2.getTitle()).isEqualTo("Test Task 2");
+        assertThat(taskDto2.getSummary()).isEqualTo("Test Summary 2");
     }
 }

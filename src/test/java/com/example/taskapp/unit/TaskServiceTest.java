@@ -12,6 +12,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -101,6 +103,25 @@ public class TaskServiceTest {
 
         verify(taskRepository, times(1)).findById(taskId);
         verify(taskRepository, never()).save(any(Task.class));
+    }
+
+
+    @Test
+    public void findAll_returnsAllTasks() {
+        List<Task> tasks = Arrays.asList(
+                Task.builder().title("Test Task 1").summary("Test Summary 1").dueDate(LocalDate.now().plusDays(1)).build(),
+                Task.builder().title("Test Task 2").summary("Test Summary 2").dueDate(LocalDate.now().plusDays(2)).build()
+        );
+
+        when(taskRepository.findAll()).thenReturn(tasks);
+
+        List<Task> result = taskService.findAll();
+
+        assertEquals(2, result.size());
+        assertEquals("Test Task 1", result.get(0).getTitle());
+        assertEquals("Test Summary 1", result.get(0).getSummary());
+        assertEquals("Test Task 2", result.get(1).getTitle());
+        assertEquals("Test Summary 2", result.get(1).getSummary());
     }
 
 

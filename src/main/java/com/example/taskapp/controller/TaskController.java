@@ -8,6 +8,9 @@ import org.modelmapper.ModelMapper;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @RestController
 @CrossOrigin(origins = "http://localhost:4200")
 @RequiredArgsConstructor
@@ -27,5 +30,13 @@ public class TaskController {
     public ResponseEntity<TaskDto> updateTask(@PathVariable(name = "id") Long taskId ,@RequestBody TaskDto taskDto) {
         Task createdTask = taskService.updateTask(taskId, modelMapper.map(taskDto, Task.class));
         return ResponseEntity.ok(modelMapper.map(createdTask, TaskDto.class));
+    }
+
+    @GetMapping()
+    public ResponseEntity<List<TaskDto>> findAll() {
+        List<TaskDto> taskDtos =  taskService.findAll().stream()
+                .map(task -> modelMapper.map(task, TaskDto.class))
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(taskDtos);
     }
 }
