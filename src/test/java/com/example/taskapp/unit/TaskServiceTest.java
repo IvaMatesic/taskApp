@@ -124,5 +124,31 @@ public class TaskServiceTest {
         assertEquals("Test Summary 2", result.get(1).getSummary());
     }
 
+    @Test
+    public void deleteTask_taskExists_deletedSuccessfully() {
+        Long taskId = 1L;
+        Task taskToDelete = Task.builder().title("Test Task 1").summary("Test Summary 1").dueDate(LocalDate.now().plusDays(1)).build();
+
+        when(taskRepository.findById(taskId)).thenReturn(Optional.ofNullable(taskToDelete));
+
+        taskService.deleteById(taskId);
+
+        verify(taskRepository).delete(taskToDelete);
+    }
+
+    @Test
+    public void deleteTask_taskDoesntExist_throwsEntityNotFoundException() {
+        Long taskId = 1L;
+
+        when(taskRepository.findById(taskId)).thenReturn(Optional.empty());
+
+        EntityNotFoundException thrown = assertThrows(EntityNotFoundException.class, () -> taskService.deleteById(taskId));
+
+        assertEquals("Task with id " + taskId + " not found", thrown.getMessage());
+
+        verify(taskRepository, times(1)).findById(taskId);
+        verify(taskRepository, never()).delete(any(Task.class));
+    }
+
 
 }

@@ -16,8 +16,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -112,5 +114,25 @@ public class TaskControllerTest {
         TaskDto taskDto2 = responseDtos.get(1);
         assertThat(taskDto2.getTitle()).isEqualTo("Test Task 2");
         assertThat(taskDto2.getSummary()).isEqualTo("Test Summary 2");
+    }
+
+    @Test
+    public void deleteTask_taskExists_successfullyDeletesTask() throws Exception {
+        Task taskToDelete = taskRepository.findAll().getFirst();
+
+        mockMvc.perform(delete("/tasks/" + taskToDelete.getId())
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNoContent());
+
+
+        Optional<Task> deletedTask = taskRepository.findById(taskToDelete.getId());
+        assertFalse(deletedTask.isPresent());
+    }
+
+    @Test
+    public void deleteTask_taskDoesntExists_returnsNotFound() throws Exception {
+        mockMvc.perform(delete("/tasks/" + 0L)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound());
     }
 }

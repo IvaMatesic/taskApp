@@ -3,6 +3,7 @@ package com.example.taskapp.controller;
 import com.example.taskapp.dto.TaskDto;
 import com.example.taskapp.model.Task;
 import com.example.taskapp.service.TaskService;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.ResponseEntity;
@@ -38,5 +39,15 @@ public class TaskController {
                 .map(task -> modelMapper.map(task, TaskDto.class))
                 .collect(Collectors.toList());
         return ResponseEntity.ok(taskDtos);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteTask(@PathVariable Long id) {
+        try {
+            taskService.deleteById(id);
+            return ResponseEntity.noContent().build();
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 }
