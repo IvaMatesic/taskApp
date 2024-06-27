@@ -45,6 +45,18 @@ public class TaskController {
         return ResponseEntity.ok(taskDtos);
     }
 
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
+    public ResponseEntity<TaskDto> findById(@PathVariable(name = "id") Long taskId ) {
+        try {
+            Task createdTask = taskService.findById(taskId);
+            return ResponseEntity.ok(modelMapper.map(createdTask, TaskDto.class));
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.badRequest().build();
+        }
+
+    }
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteTask(@PathVariable Long id) {
@@ -52,7 +64,7 @@ public class TaskController {
             taskService.deleteById(id);
             return ResponseEntity.noContent().build();
         } catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.badRequest().build();
         }
     }
 }

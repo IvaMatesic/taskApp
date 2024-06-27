@@ -41,10 +41,9 @@ public class TaskService {
         taskRepository.delete(persitedTask);
     }
 
-    private Task findById(Long id) {
+    @Transactional(readOnly = true)
+    public Task findById(Long id) {
         return taskRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Task with id " + id + " not found"));
     }
-
-
 }
