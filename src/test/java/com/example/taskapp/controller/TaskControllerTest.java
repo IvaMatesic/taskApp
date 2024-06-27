@@ -129,6 +129,15 @@ public class TaskControllerTest {
     }
 
     @Test
+    public void findAllTasks_unauthenticatedUser_returnsUnauthorized() throws Exception {
+        mockMvc.perform(get(TASKS_URL)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnauthorized())
+                .andReturn()
+                .getResponse();
+    }
+
+    @Test
     @WithMockUser(value = "admin", roles = "ADMIN")
     public void deleteTask_taskExists_successfullyDeletesTask() throws Exception {
         Task taskToDelete = taskRepository.findAll().getFirst();
