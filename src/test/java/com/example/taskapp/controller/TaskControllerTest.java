@@ -56,8 +56,8 @@ public class TaskControllerTest {
 
 
     @Test
-    @WithMockUser(value = "admin", roles = "ADMIN")
-    public void createTask_userIsAdmin_successfullyCreatesTask() throws Exception {
+    @WithMockUser(roles = "ADMIN")
+    public void createTask_userIsAdmin_createsTask() throws Exception {
         TaskDto dto = TaskDto.builder()
                 .title("Sample Task")
                 .summary("This is a sample task")
@@ -78,8 +78,26 @@ public class TaskControllerTest {
     }
 
     @Test
-    @WithMockUser(value = "admin", roles = "ADMIN")
-    public void updateTask_userIsAdmin_successfullyUpdatesTask() throws Exception {
+    @WithMockUser(roles = "USER")
+    public void createTask_userIsNotAdmin_returnsUnauthorized() throws Exception {
+        TaskDto dto = TaskDto.builder()
+                .title("Sample Task")
+                .summary("This is a sample task")
+                .dueDate(LocalDate.now().plusDays(7))
+                .build();
+
+        mockMvc.perform(post(TASKS_URL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isForbidden())
+                .andReturn()
+                .getResponse();
+
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    public void updateTask_userIsAdmin_updatesTask() throws Exception {
         Task task = taskRepository.save(Task.builder().title("Sample Task")
                 .summary("This is a sample task")
                 .dueDate(LocalDate.now().plusDays(7)).build());
@@ -104,8 +122,32 @@ public class TaskControllerTest {
                 .isEqualTo(dto);
     }
 
+
     @Test
-    @WithMockUser(value = "admin", roles = "ADMIN")
+    @WithMockUser(roles = "USER")
+    public void updateTask_userIsNotAdmin_returnsUnauthorized() throws Exception {
+        Task task = taskRepository.save(Task.builder().title("Sample Task")
+                .summary("This is a sample task")
+                .dueDate(LocalDate.now().plusDays(7)).build());
+
+        TaskDto dto = TaskDto.builder()
+                .id(task.getId())
+                .title("New changed title")
+                .summary("New changed summary")
+                .dueDate(LocalDate.now().plusDays(14))
+                .build();
+
+        mockMvc.perform(put(TASKS_URL + "/" + task.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isForbidden())
+                .andReturn()
+                .getResponse();
+    }
+
+
+    @Test
+    @WithMockUser(roles = "USER")
     public void findAllTasks_userIsAuthenticated_returnsAllTasks() throws Exception {
         MockHttpServletResponse result = mockMvc.perform(get(TASKS_URL)
                         .contentType(MediaType.APPLICATION_JSON))
@@ -137,8 +179,52 @@ public class TaskControllerTest {
                 .getResponse();
     }
 
+    @WithMockUser(roles = "USER")
     @Test
-    @WithMockUser(value = "admin", roles = "ADMIN")
+    public void findById_taskExistsAndAuthenticatedUser_returnsTask() throws Exception {
+        Task savedTask = taskRepository.findAll().getFirst();
+        TaskDto dto = TaskDto.builder()
+                .id(savedTask.getId())
+                .title(savedTask.getTitle())
+                .summary(savedTask.getSummary())
+                .dueDate(savedTask.getDueDate())
+                .build();
+
+        MockHttpServletResponse result = mockMvc.perform(get(TASKS_URL + '/' + savedTask.getId())
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse();
+
+        TaskDto responseDto = objectMapper.readValue(result.getContentAsString(), TaskDto.class);
+
+        assertThat(responseDto).usingRecursiveComparison()
+                .isEqualTo(dto);
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void findById_taskDoesntExist_returnsBadRequest() throws Exception {
+        mockMvc.perform(get(TASKS_URL + '/' + 0L)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andReturn()
+                .getResponse();
+
+    }
+
+    @Test
+    public void findById_unauthenticatedUser_returnsUnauthorized() throws Exception {
+        mockMvc.perform(get(TASKS_URL + '/' + 0L)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnauthorized())
+                .andReturn()
+                .getResponse();
+
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
     public void deleteTask_taskExists_successfullyDeletesTask() throws Exception {
         Task taskToDelete = taskRepository.findAll().getFirst();
 
@@ -152,10 +238,25 @@ public class TaskControllerTest {
     }
 
     @Test
-    @WithMockUser(value = "admin", roles = "ADMIN")
+    @WithMockUser(roles = "ADMIN")
     public void deleteTask_taskDoesntExists_returnsNotFound() throws Exception {
         mockMvc.perform(delete(TASKS_URL + "/" + 0L)
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    public void deleteTask_userIsNotAdmin_returnsForbidden() throws Exception {
+        mockMvc.perform(delete(TASKS_URL + "/" + 0L)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    public void deleteTask_unauthenticatedUser_returnsUnauthorized() throws Exception {
+        mockMvc.perform(delete(TASKS_URL + "/" + 0L)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnauthorized());
     }
 }
