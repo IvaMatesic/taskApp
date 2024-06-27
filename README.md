@@ -10,6 +10,12 @@ TaskApp is a Spring Boot application that demonstrates CRUD operations for manag
 
 ## Setup Instructions
 
+### Prerequisites
+
+- Java 21
+- Docker Desktop
+- Git
+
 1. **Clone the repository**:
 
    ```
