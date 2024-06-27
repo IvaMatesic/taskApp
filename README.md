@@ -47,7 +47,17 @@ TaskApp is a Spring Boot application that demonstrates CRUD operations for manag
     Say Hello (Private): GET /private/hello (Authenticated users)
     ```
 
-    **Available Users**
+    Expected body for POST/PUT requests
+   ```
+   {
+       "title": "Sample task",
+       "summary": "Sample summary of the task",
+       "dueDate": "2024-07-01"
+   }
+   ```
+
+
+    **Available Users (Basic Auth)**
      
       **Admin**
     
