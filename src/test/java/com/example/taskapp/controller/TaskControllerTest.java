@@ -7,11 +7,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
 
 import java.time.LocalDate;
 import java.util.Arrays;
@@ -20,14 +22,15 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
-@AutoConfigureMockMvc
 public class TaskControllerTest {
+    
+    private static final String TASKS_URL = "/private/tasks";
 
-    @Autowired
     private MockMvc mockMvc;
 
     @Autowired
@@ -35,9 +38,15 @@ public class TaskControllerTest {
 
     @Autowired
     private TaskRepository taskRepository;
+    @Autowired
+    private WebApplicationContext context;
 
     @BeforeEach
-    public void setup() {
+    public void setupBeforeEach() {
+        mockMvc = MockMvcBuilders
+                .webAppContextSetup(context)
+                .apply(springSecurity())
+                .build();
         taskRepository.deleteAll();
         taskRepository.saveAll(Arrays.asList(
                 Task.builder().title("Test Task 1").summary("Test Summary 1").dueDate(LocalDate.now().plusDays(1)).build(),
@@ -47,14 +56,15 @@ public class TaskControllerTest {
 
 
     @Test
-    public void testCreateTask() throws Exception {
+    @WithMockUser(value = "admin", roles = "ADMIN")
+    public void createTask_userIsAdmin_successfullyCreatesTask() throws Exception {
         TaskDto dto = TaskDto.builder()
                 .title("Sample Task")
                 .summary("This is a sample task")
                 .dueDate(LocalDate.now().plusDays(7))
                 .build();
 
-        MockHttpServletResponse result = mockMvc.perform(post("/tasks")
+        MockHttpServletResponse result = mockMvc.perform(post(TASKS_URL)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
@@ -68,7 +78,8 @@ public class TaskControllerTest {
     }
 
     @Test
-    public void testUpdateTask() throws Exception {
+    @WithMockUser(value = "admin", roles = "ADMIN")
+    public void updateTask_userIsAdmin_successfullyUpdatesTask() throws Exception {
         Task task = taskRepository.save(Task.builder().title("Sample Task")
                 .summary("This is a sample task")
                 .dueDate(LocalDate.now().plusDays(7)).build());
@@ -80,7 +91,7 @@ public class TaskControllerTest {
                 .dueDate(LocalDate.now().plusDays(14))
                 .build();
 
-        MockHttpServletResponse result = mockMvc.perform(put("/tasks/" + task.getId())
+        MockHttpServletResponse result = mockMvc.perform(put(TASKS_URL + "/" + task.getId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
@@ -94,8 +105,9 @@ public class TaskControllerTest {
     }
 
     @Test
-    public void findAllTasks_returnsAllTasks() throws Exception {
-    MockHttpServletResponse result =  mockMvc.perform(get("/tasks")
+    @WithMockUser(value = "admin", roles = "ADMIN")
+    public void findAllTasks_userIsAuthenticated_returnsAllTasks() throws Exception {
+        MockHttpServletResponse result = mockMvc.perform(get(TASKS_URL)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andReturn()
@@ -117,10 +129,20 @@ public class TaskControllerTest {
     }
 
     @Test
+    public void findAllTasks_unauthenticatedUser_returnsUnauthorized() throws Exception {
+        mockMvc.perform(get(TASKS_URL)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnauthorized())
+                .andReturn()
+                .getResponse();
+    }
+
+    @Test
+    @WithMockUser(value = "admin", roles = "ADMIN")
     public void deleteTask_taskExists_successfullyDeletesTask() throws Exception {
         Task taskToDelete = taskRepository.findAll().getFirst();
 
-        mockMvc.perform(delete("/tasks/" + taskToDelete.getId())
+        mockMvc.perform(delete(TASKS_URL + "/" + taskToDelete.getId())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNoContent());
 
@@ -130,8 +152,9 @@ public class TaskControllerTest {
     }
 
     @Test
+    @WithMockUser(value = "admin", roles = "ADMIN")
     public void deleteTask_taskDoesntExists_returnsNotFound() throws Exception {
-        mockMvc.perform(delete("/tasks/" + 0L)
+        mockMvc.perform(delete(TASKS_URL + "/" + 0L)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound());
     }
