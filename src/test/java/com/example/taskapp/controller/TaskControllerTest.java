@@ -57,7 +57,7 @@ public class TaskControllerTest {
 
     @Test
     @WithMockUser(value = "admin", roles = "ADMIN")
-    public void testCreateTask() throws Exception {
+    public void createTask_userIsAdmin_successfullyCreatesTask() throws Exception {
         TaskDto dto = TaskDto.builder()
                 .title("Sample Task")
                 .summary("This is a sample task")
@@ -79,7 +79,7 @@ public class TaskControllerTest {
 
     @Test
     @WithMockUser(value = "admin", roles = "ADMIN")
-    public void testUpdateTask() throws Exception {
+    public void updateTask_userIsAdmin_successfullyUpdatesTask() throws Exception {
         Task task = taskRepository.save(Task.builder().title("Sample Task")
                 .summary("This is a sample task")
                 .dueDate(LocalDate.now().plusDays(7)).build());
@@ -106,7 +106,7 @@ public class TaskControllerTest {
 
     @Test
     @WithMockUser(value = "admin", roles = "ADMIN")
-    public void findAllTasks_returnsAllTasks() throws Exception {
+    public void findAllTasks_userIsAuthenticated_returnsAllTasks() throws Exception {
         MockHttpServletResponse result = mockMvc.perform(get(TASKS_URL)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
